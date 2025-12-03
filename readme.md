@@ -9,7 +9,7 @@ Official implementation of our feature-based sparse Gaussian process method for 
 - **Sparse Gaussian Process (SGP)** with inducing points for efficient computation
 - **Bayesian Generalized Kernel (BGK)** for uncertainty estimation
 - **GPU acceleration** with CUDA/CuPy support
-- **ROS1 (Noetic)** and **ROS2 (Humble/Iron)** support
+- **ROS1 (Noetic)** and **ROS2 (Humble)** support
 - **3D simulation environment** with simulated LiDAR
 
 ---
@@ -53,12 +53,13 @@ roslaunch simulation_env_ros1 simulation.launch
 rosrun teleop_twist_keyboard teleop_twist_keyboard.py
 
 # Terminal 3 - Run FSGP-BGK node
-cd src/fsgp_bgk/python && python node_ros1.py
+cd src/fsgp_bgk/python
+python node_ros1.py
 ```
 
 ---
 
-## ROS2 (Humble/Iron)
+## ROS2 (Humble)
 
 ### Build
 ```bash
@@ -82,7 +83,8 @@ ros2 launch simulation_env simulation.launch.py
 ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 # Terminal 3 - Run FSGP-BGK node
-cd src/fsgp_bgk/python && python node_ros2.py
+cd src/fsgp_bgk/python
+python node_ros2.py
 ```
 
 ---
@@ -92,7 +94,7 @@ cd src/fsgp_bgk/python && python node_ros2.py
 | Package | Description | ROS Version |
 |---------|-------------|-------------|
 | `simulation_env_ros1` | Simulation environment | ROS1 Noetic |
-| `simulation_env_ros2` | Simulation environment | ROS2 Humble/Iron |
+| `simulation_env_ros2` | Simulation environment | ROS2 Humble |
 | `fsgp_bgk` | FSGP-BGK algorithm (Python) | Both (run directly) |
 
 > **Note**: `fsgp_bgk` is a pure Python package, run it directly without building.
