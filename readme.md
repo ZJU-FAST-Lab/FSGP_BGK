@@ -12,11 +12,31 @@ Official implementation of our feature-based sparse Gaussian process method for 
 - **ROS1 (Noetic)** and **ROS2 (Humble/Iron)** support
 - **3D simulation environment** with simulated LiDAR
 
+## Quick Start
+
+We provide one-click setup scripts for both ROS1 and ROS2 users:
+
+```bash
+# Clone the repository
+git clone https://github.com/MarineRock10/FSGP-BGK-ROS2.git
+cd FSGP-BGK-ROS2
+
+# For ROS1 (Noetic) users:
+./setup_ros1.sh
+
+# For ROS2 (Humble/Iron) users:
+./setup_ros2.sh
+```
+
+The setup scripts will automatically configure the workspace and build the project.
+
+---
+
 ## Dependencies
 
 ```bash
 # Python
-pip install numpy open3d gpytorch torch cupy-cuda11x
+pip install numpy open3d gpytorch torch cupy-cuda11x scikit-learn pyyaml
 
 # ROS1 (Noetic)
 sudo apt install ros-noetic-tf2-eigen ros-noetic-pcl-ros ros-noetic-teleop-twist-keyboard
@@ -29,16 +49,18 @@ sudo apt install ros-humble-tf2-eigen ros-humble-pcl-ros ros-humble-teleop-twist
 
 ## ROS1 (Noetic)
 
-### Build
+### Build (Manual)
 ```bash
 cd ~/FSGP-BGK-ROS2
-catkin_make
-source devel/setup.bash
+./setup_ros1.sh
+# Or manually:
+# catkin_make && source devel/setup.bash
 ```
 
 ### Run Simulation
 ```bash
 # Terminal 1 - Launch simulation
+source devel/setup.bash
 roslaunch simulation_env_ros1 simulation.launch
 
 # Terminal 2 - Keyboard control
@@ -52,17 +74,19 @@ cd src/fsgp_bgk/python && python node_ros1.py
 
 ## ROS2 (Humble/Iron)
 
-### Build
+### Build (Manual)
 ```bash
 cd ~/FSGP-BGK-ROS2
-colcon build
-source install/setup.bash
+./setup_ros2.sh
+# Or manually:
+# colcon build && source install/setup.bash
 ```
 
 ### Run Simulation
 ```bash
 # Terminal 1 - Launch simulation
-ros2 launch simulation_env_ros2 simulation.launch.py
+source install/setup.bash
+ros2 launch simulation_env simulation.launch.py
 
 # Terminal 2 - Keyboard control
 ros2 run teleop_twist_keyboard teleop_twist_keyboard
@@ -75,25 +99,29 @@ cd src/fsgp_bgk/python && python node_ros2.py
 
 ## Switching Between ROS1 and ROS2
 
-The workspace supports both ROS versions. Use **CATKIN_IGNORE** files to exclude incompatible packages:
+This workspace supports both ROS versions using IGNORE marker files. **Use the setup scripts to switch between versions:**
 
-| Package | ROS1 | ROS2 |
-|---------|------|------|
-| `simulation_env_ros1` | ✅ Built by catkin | ❌ Has CATKIN_IGNORE |
-| `simulation_env_ros2` | ❌ Has CATKIN_IGNORE | ✅ Built by colcon |
-| `fsgp_bgk` | ❌ Has CATKIN_IGNORE | ❌ Has CATKIN_IGNORE |
+```bash
+# Switch to ROS1
+./setup_ros1.sh
+
+# Switch to ROS2
+./setup_ros2.sh
+```
+
+### How it works
+
+| Package | ROS1 (catkin) | ROS2 (colcon) |
+|---------|---------------|---------------|
+| `simulation_env_ros1` | ✅ Built | ❌ Ignored |
+| `simulation_env_ros2` | ❌ Ignored | ✅ Built |
+| `fsgp_bgk` | ❌ Ignored (Python only) | ❌ Ignored (Python only) |
 
 > **Note**: `fsgp_bgk` is a pure Python package, run directly without building.
 
-### For ROS1 users:
-```bash
-catkin_make   # Only builds simulation_env_ros1
-```
-
-### For ROS2 users:
-```bash
-colcon build  # Only builds simulation_env_ros2
-```
+> **Technical Note**: The setup scripts manage `CATKIN_IGNORE` and `COLCON_IGNORE` files.
+> Note that newer versions of `catkin_pkg` also recognize `COLCON_IGNORE`, so the ROS1 setup script
+> removes any `COLCON_IGNORE` files from ROS1 packages to ensure proper detection.
 
 ---
 
