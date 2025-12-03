@@ -1,0 +1,46 @@
+# ROS1 catkin build
+build/
+devel/
+logs/
+.catkin_workspace
+src/CMakeLists.txt
+
+# ROS2 colcon build
+install/
+log/
+
+# Cache
+.cache/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# ROS bags
+*.bag
+
+# Temporary files
+*.log
+*.tmp
+
+# CATKIN_IGNORE files (keep them but note they exist)
+# src/*/CATKIN_IGNORE
+

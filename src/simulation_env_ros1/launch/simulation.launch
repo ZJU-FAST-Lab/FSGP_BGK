@@ -3,10 +3,11 @@
     <!-- 参数文件 -->
     <arg name="params_file" default="$(find simulation_env_ros1)/config/params.yaml"/>
     <arg name="rviz_config" default="$(find simulation_env_ros1)/rviz/simulation.rviz"/>
-    
+
     <!-- simulation_node -->
     <node name="simulation_node" pkg="simulation_env_ros1" type="simulation_node" output="screen">
-        <rosparam file="$(arg params_file)" command="load" ns=""/>
+        <!-- 直接加载到节点的私有命名空间 -->
+        <rosparam file="$(arg params_file)" command="load" subst_value="true"/>
     </node>
     
     <!-- simulated_lidar -->

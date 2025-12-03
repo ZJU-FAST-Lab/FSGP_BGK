@@ -1,9 +1,5 @@
-/**
- * @file simulated_lidar.cpp
- * @brief ROS1 Noetic版本的模拟激光雷达节点
- * @details 基于全局点云生成模拟的激光雷达扫描数据
- *          修复了点云穿模问题：添加了地图边界检查
- */
+// Simulated LiDAR node for ROS1 Noetic
+// Generates simulated LiDAR scans from global point cloud with boundary checking
 
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
@@ -38,7 +34,7 @@ public:
         pnh_.param<double>("publish_rate", publish_rate_, 10.0);
         pnh_.param<double>("tf_lookup_timeout", tf_lookup_timeout_, 0.1);
         
-        // 【修复穿模问题】添加地图边界参数
+        // Map boundary for penetration fix
         pnh_.param<double>("map_min_x", map_min_x_, -100.0);
         pnh_.param<double>("map_max_x", map_max_x_, 100.0);
         pnh_.param<double>("map_min_y", map_min_y_, -100.0);
@@ -87,29 +83,23 @@ private:
     std::string robot_frame_, world_frame_;
     double publish_rate_, tf_lookup_timeout_;
     
-    // 【修复穿模问题】地图边界参数
+    // Map boundary
     double map_min_x_, map_max_x_;
     double map_min_y_, map_max_y_;
     double map_min_z_, map_max_z_;
     bool enable_boundary_check_;
-    
-    // ROS接口
+
     ros::NodeHandle nh_, pnh_;
     ros::Publisher lidar_pub_, local_cloud_pub_;
     ros::Subscriber global_cloud_sub_;
     ros::Timer timer_;
-    
-    // TF2
+
     tf2_ros::Buffer tf_buffer_;
     tf2_ros::TransformListener tf_listener_;
-    
-    // 数据存储
+
     pcl::PointCloud<pcl::PointXYZ>::Ptr global_cloud_;
     bool global_cloud_loaded_;
-    
     std::vector<std::vector<double>> bin_matrix_;
-    
-    // 随机数生成器
     std::mt19937 random_engine_;
     std::normal_distribution<double> noise_distribution_;
 
@@ -138,7 +128,6 @@ private:
                 return;
             }
             
-            // 【修复穿模问题】加载点云时计算实际边界
             if (enable_boundary_check_) {
                 updateMapBoundary(cloud);
             }
@@ -152,7 +141,6 @@ private:
         }
     }
 
-    // 【修复穿模问题】根据实际点云计算地图边界
     void updateMapBoundary(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud) {
         if (cloud->empty()) return;
 
@@ -170,7 +158,6 @@ private:
             map_max_z_ = std::max(map_max_z_, (double)point.z);
         }
 
-        // 添加一点余量
         double margin = 0.5;
         map_min_x_ -= margin; map_max_x_ += margin;
         map_min_y_ -= margin; map_max_y_ += margin;
@@ -180,7 +167,6 @@ private:
                  map_min_x_, map_max_x_, map_min_y_, map_max_y_, map_min_z_, map_max_z_);
     }
 
-    // 【修复穿模问题】检查点是否在地图边界内
     bool isPointInMapBoundary(double x, double y, double z) {
         if (!enable_boundary_check_) return true;
         return (x >= map_min_x_ && x <= map_max_x_ &&
@@ -246,11 +232,10 @@ private:
                     point.z = range * std::sin(v_angle);
 
                     if (isValidPoint(point)) {
-                        // 【修复穿模问题】将点转换到世界坐标系检查边界
                         if (enable_boundary_check_) {
                             Eigen::Vector3d world_pt = robot_to_world * Eigen::Vector3d(point.x, point.y, point.z);
                             if (!isPointInMapBoundary(world_pt.x(), world_pt.y(), world_pt.z())) {
-                                continue; // 跳过超出地图边界的点
+                                continue;
                             }
                         }
                         simulated_cloud->push_back(point);

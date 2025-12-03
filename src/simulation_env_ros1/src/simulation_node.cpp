@@ -1,8 +1,5 @@
-/**
- * @file simulation_node.cpp
- * @brief ROS1 Noetic版本的机器人仿真节点
- * @details 模拟机器人在3D地形上的运动，包括高度自适应和姿态调整
- */
+// Robot simulation node for ROS1 Noetic
+// Simulates robot motion on 3D terrain with height adaptation
 
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
@@ -229,7 +226,7 @@ private:
         pcl::PointCloud<pcl::PointXYZ>::Ptr ground_cloud(new pcl::PointCloud<pcl::PointXYZ>());
         extract_ground_points(ground_cloud);
 
-        if (ground_cloud->size() < 10) {
+        if (ground_cloud->size() < 3) {
             ROS_WARN_THROTTLE(1.0, "Not enough ground points: %zu", ground_cloud->size());
             return;
         }

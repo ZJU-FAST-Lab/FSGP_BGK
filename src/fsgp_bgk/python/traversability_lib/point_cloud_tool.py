@@ -24,7 +24,6 @@ SOFTWARE.
 
 import numpy as np
 import open3d as o3d
-import numpy as np
 
 def pointcloud2_to_xyz(msg, z_threshold=2.0):
     field_names = [field.name for field in msg.fields]

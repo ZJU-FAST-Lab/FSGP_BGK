@@ -21,7 +21,6 @@ public:
                       tf_buffer_(this->get_clock()),
                       tf_listener_(tf_buffer_) {
 
-        // 参数配置
         this->declare_parameter<double>("horizontal_resolution", 0.05);
         this->declare_parameter<int>("num_laser_lines", 64);
         this->declare_parameter<double>("max_range", 5.0);
@@ -32,7 +31,6 @@ public:
         this->declare_parameter<double>("publish_rate", 10.0);
         this->declare_parameter<double>("tf_lookup_timeout", 0.1);
 
-        // 【修复穿模问题】添加边界检查参数
         this->declare_parameter<bool>("enable_boundary_check", true);
 
         horizontal_resolution_ = this->get_parameter("horizontal_resolution").as_double();
@@ -46,7 +44,6 @@ public:
         tf_lookup_timeout_ = this->get_parameter("tf_lookup_timeout").as_double();
         enable_boundary_check_ = this->get_parameter("enable_boundary_check").as_bool();
 
-        // 初始化bin矩阵
         int horizontal_bins = static_cast<int>(2 * M_PI / horizontal_resolution_);
         bin_matrix_ = std::vector<std::vector<double>>(horizontal_bins,
                      std::vector<double>(num_laser_lines_, std::numeric_limits<double>::max()));
@@ -105,31 +102,24 @@ private:
     std::string world_frame_;
     double tf_lookup_timeout_;
 
-    // 【修复穿模问题】边界检查参数
     bool enable_boundary_check_;
     double map_min_x_, map_max_x_;
     double map_min_y_, map_max_y_;
     double map_min_z_, map_max_z_;
-    
-    // ROS接口
+
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr lidar_pub_;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr local_cloud_pub_;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr global_cloud_sub_;
     rclcpp::TimerBase::SharedPtr timer_;
-    
-    // TF2
+
     tf2_ros::Buffer tf_buffer_;
     tf2_ros::TransformListener tf_listener_;
-    
-    // 数据存储
+
     pcl::PointCloud<pcl::PointXYZ>::Ptr global_cloud_;
     bool global_cloud_loaded_;
     bool last_transform_valid_;
     Eigen::Affine3d last_transform_;
-    
     std::vector<std::vector<double>> bin_matrix_;
-    
-    // 随机数生成器
     std::mt19937 random_engine_;
     std::normal_distribution<double> noise_distribution_;
 
@@ -168,7 +158,6 @@ private:
                 return;
             }
 
-            // 【修复穿模问题】计算地图边界
             if (enable_boundary_check_) {
                 updateMapBoundary(cloud);
             }
@@ -180,7 +169,6 @@ private:
                        "Global cloud loaded with %zu points, will not update again",
                        cloud->size());
 
-            // 成功加载后，取消订阅以节省资源
             global_cloud_sub_.reset();
 
         } catch (const std::exception& e) {
@@ -188,7 +176,6 @@ private:
         }
     }
 
-    // 【修复穿模问题】根据实际点云计算地图边界
     void updateMapBoundary(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud) {
         if (cloud->empty()) return;
 
@@ -206,7 +193,6 @@ private:
             map_max_z_ = std::max(map_max_z_, (double)point.z);
         }
 
-        // 添加一点余量
         double margin = 0.5;
         map_min_x_ -= margin; map_max_x_ += margin;
         map_min_y_ -= margin; map_max_y_ += margin;
@@ -217,7 +203,6 @@ private:
                    map_min_x_, map_max_x_, map_min_y_, map_max_y_, map_min_z_, map_max_z_);
     }
 
-    // 【修复穿模问题】检查点是否在地图边界内
     bool isPointInMapBoundary(double x, double y, double z) {
         if (!enable_boundary_check_) return true;
         return (x >= map_min_x_ && x <= map_max_x_ &&
@@ -268,7 +253,6 @@ private:
         }
     }
 
-    // 【修复穿模问题】添加变换参数用于边界检查
     pcl::PointCloud<pcl::PointXYZ>::Ptr generateSimulatedCloud(const Eigen::Affine3d& robot_to_world) {
         pcl::PointCloud<pcl::PointXYZ>::Ptr simulated_cloud(new pcl::PointCloud<pcl::PointXYZ>);
         const size_t expected_size = bin_matrix_.size() * bin_matrix_[0].size() / 4;
@@ -287,11 +271,10 @@ private:
                     point.z = range * std::sin(v_angle);
 
                     if (isValidPoint(point)) {
-                        // 【修复穿模问题】将点转换到世界坐标系检查边界
                         if (enable_boundary_check_) {
                             Eigen::Vector3d world_pt = robot_to_world * Eigen::Vector3d(point.x, point.y, point.z);
                             if (!isPointInMapBoundary(world_pt.x(), world_pt.y(), world_pt.z())) {
-                                continue; // 跳过超出地图边界的点
+                                continue;
                             }
                         }
                         simulated_cloud->push_back(point);

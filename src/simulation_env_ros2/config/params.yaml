@@ -1,0 +1,24 @@
+# Simulation Environment Parameters (ROS2)
+simulation_node:
+  ros__parameters:
+    # Initial pose
+    init_x: 0.0
+    init_y: 0.0
+    init_z: 0.0
+
+    # Robot model
+    mesh_resource: "package://simulation_env/meshes/robot.dae"
+    mesh_scale: 0.0005
+    mesh_offset_x: -0.15
+    mesh_offset_y: -0.16
+
+    # Control
+    max_linear_vel: 1.0
+    max_angular_vel: 3.14159
+    control_rate: 50.0
+
+    # Point cloud
+    pcd_file_path: "/home/percy/FSGP-BGK-ROS2/src/simulation_env_ros2/PCD/forest.pcd"
+    search_radius: 0.2
+    min_neighbors: 5
+    height_offset: 0.0
