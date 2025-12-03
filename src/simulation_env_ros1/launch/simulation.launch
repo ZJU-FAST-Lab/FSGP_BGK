@@ -1,18 +1,18 @@
 <?xml version="1.0"?>
 <launch>
-    <!-- 参数文件 -->
+    <!-- Parameter file -->
     <arg name="params_file" default="$(find simulation_env_ros1)/config/params.yaml"/>
     <arg name="rviz_config" default="$(find simulation_env_ros1)/rviz/simulation.rviz"/>
 
     <!-- simulation_node -->
     <node name="simulation_node" pkg="simulation_env_ros1" type="simulation_node" output="screen">
-        <!-- 直接加载到节点的私有命名空间 -->
+        <!-- Load parameters to node's private namespace -->
         <rosparam file="$(arg params_file)" command="load" subst_value="true"/>
     </node>
-    
+
     <!-- simulated_lidar -->
     <node name="simulated_lidar" pkg="simulation_env_ros1" type="simulated_lidar" output="screen">
-        <!-- 激光雷达参数 -->
+        <!-- LiDAR parameters -->
         <param name="horizontal_resolution" value="0.05"/>
         <param name="num_laser_lines" value="64"/>
         <param name="max_range" value="5.0"/>
@@ -22,11 +22,11 @@
         <param name="world_frame" value="map"/>
         <param name="publish_rate" value="10.0"/>
         <param name="tf_lookup_timeout" value="0.1"/>
-        <!-- 边界检查参数（修复穿模问题） -->
+        <!-- Boundary check parameters (fix clipping issues) -->
         <param name="enable_boundary_check" value="true"/>
     </node>
-    
-    <!-- RViz可视化 -->
+
+    <!-- RViz visualization -->
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rviz_config)" output="screen"/>
 </launch>
 

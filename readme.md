@@ -1,16 +1,32 @@
-# FSGP-BGK: Real-time Spatial-temporal Traversability Assessment
+# FSGP-BGK
 
-Official implementation of our feature-based sparse Gaussian process method for real-time terrain analysis and autonomous navigation (IROS 2025).
+**Real-time Spatial-temporal Traversability Assessment via Feature-based Sparse Gaussian Process**
 
-![Simulation](src/simulation_env_ros2/doc/pic.png)
+This repository contains the official implementation of our **IROS 2025 Oral** paper (Mapping Session).
 
-## Features
+[[Paper]](https://arxiv.org/abs/2503.04134) [[Project Page]](https://percyhzy.github.io/IROS2025-website/) [[Video (YouTube)]](https://youtu.be/T8aI8dNnIBk?si=T902PoA6iaF8JmKr) [[Video (Bilibili)]](https://www.bilibili.com/video/BV13msgztEMX/?share_source=copy_web&vd_source=c281e29c6456ee7bc965eaf485fcb88c)
 
-- **Sparse Gaussian Process (SGP)** with inducing points for efficient computation
-- **Bayesian Generalized Kernel (BGK)** for uncertainty estimation
-- **GPU acceleration** with CUDA/CuPy support
-- **ROS1 (Noetic)** and **ROS2 (Humble)** support
-- **3D simulation environment** with simulated LiDAR
+![Uneven Terrain](src/simulation_env_ros1/doc/featured.png)
+
+---
+
+## Abstract
+
+Terrain analysis is critical for the practical application of ground mobile robots in real-world tasks, especially in outdoor unstructured environments. In this paper, we propose a novel spatial-temporal traversability assessment method, which aims to enable autonomous robots to effectively navigate through complex terrains. Our approach utilizes **Sparse Gaussian Processes (SGP)** to extract geometric features (curvature, gradient, elevation, etc.) directly from point cloud scans. These features are then used to construct a high-resolution local traversability map. Then, we design a spatial-temporal **Bayesian Gaussian Kernel (BGK)** inference method to dynamically evaluate traversability scores, integrating historical and real-time data while considering factors such as slope, flatness, gradient, and uncertainty metrics. GPU acceleration is applied in the feature extraction step, and the system achieves real-time performance. Extensive simulation experiments across diverse terrain scenarios demonstrate that our method outperforms SOTA approaches in both accuracy and computational efficiency. Additionally, we develop an autonomous navigation framework integrated with the traversability map and validate it with a differential driven vehicle in complex outdoor environments.
+
+---
+
+## What's Included
+
+This release includes:
+- ✅ **Simulation environment** (ROS1/ROS2)
+- ✅ **Perception module** (FSGP-BGK traversability mapping)
+
+**Coming Soon:**
+- 🚧 Planning module (A* + MINCO trajectory optimization)
+- 🚧 Quantitative experiment simulator (batch testing)
+- 🚧 Isaac Sim integration
+- 🚧 Hardware deployment guide and real-world examples
 
 ---
 
@@ -29,86 +45,47 @@ sudo apt install ros-humble-tf2-eigen ros-humble-pcl-ros ros-humble-teleop-twist
 
 ---
 
-## ROS1 (Noetic)
+## Quick Start
 
-### Build
+### ROS1 (Noetic)
+
 ```bash
-cd ~/FSGP-BGK-ROS2
-
-# Ignore ROS2 package (required before build)
-touch src/simulation_env_ros2/CATKIN_IGNORE
-
 # Build
+cd ~/FSGP-BGK
+touch src/simulation_env_ros2/CATKIN_IGNORE
 catkin_make
 source devel/setup.bash
-```
 
-### Run Simulation
-```bash
 # Terminal 1 - Launch simulation
-source devel/setup.bash
 roslaunch simulation_env_ros1 simulation.launch
 
 # Terminal 2 - Keyboard control
 rosrun teleop_twist_keyboard teleop_twist_keyboard.py
 
-# Terminal 3 - Run FSGP-BGK node
+# Terminal 3 - Run FSGP-BGK
 cd src/fsgp_bgk/python
 python node_ros1.py
 ```
 
----
+### ROS2 (Humble)
 
-## ROS2 (Humble)
-
-### Build
 ```bash
-cd ~/FSGP-BGK-ROS2
-
-# Ignore ROS1 package (required before build)
-touch src/simulation_env_ros1/COLCON_IGNORE
-
 # Build
+cd ~/FSGP-BGK
+touch src/simulation_env_ros1/COLCON_IGNORE
 colcon build
 source install/setup.bash
-```
 
-### Run Simulation
-```bash
 # Terminal 1 - Launch simulation
-source install/setup.bash
 ros2 launch simulation_env simulation.launch.py
 
 # Terminal 2 - Keyboard control
 ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
-# Terminal 3 - Run FSGP-BGK node
+# Terminal 3 - Run FSGP-BGK
 cd src/fsgp_bgk/python
 python node_ros2.py
 ```
-
----
-
-## Workspace Structure
-
-| Package | Description | ROS Version |
-|---------|-------------|-------------|
-| `simulation_env_ros1` | Simulation environment | ROS1 Noetic |
-| `simulation_env_ros2` | Simulation environment | ROS2 Humble |
-| `fsgp_bgk` | FSGP-BGK algorithm (Python) | Both (run directly) |
-
-> **Note**: `fsgp_bgk` is a pure Python package, run it directly without building.
-
----
-
-## Configuration
-
-Edit parameters in:
-- ROS1: `src/simulation_env_ros1/config/params.yaml`
-- ROS2: `src/simulation_env_ros2/config/params.yaml`
-- FSGP-BGK: `src/fsgp_bgk/config/params.yaml`
-
-**Important**: Update `pcd_file_path` to your local path before running.
 
 ---
 
@@ -125,6 +102,48 @@ Edit parameters in:
 
 ---
 
+## Configuration
+
+Edit parameters in:
+- `src/simulation_env_ros1/config/params.yaml` (ROS1)
+- `src/simulation_env_ros2/config/params.yaml` (ROS2)
+- `src/fsgp_bgk/config/params.yaml` (Algorithm)
+
+> **Note**: Update `pcd_file_path` to your local path before running.
+
+---
+
+## Citation
+
+If you find this work useful, please cite:
+
+```bibtex
+@inproceedings{hou2025fsgpbgk,
+  title={Real-time Spatial-temporal Traversability Assessment via Feature-based Sparse Gaussian Process},
+  author={Hou, Zhenyu and Tan, Senming and Zhang, Zhihao and Xu, Long and Zhang, Mengke and He, Zhaoqi and Xu, Chao and Gao, Fei and Cao, Yanjun},
+  booktitle={IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
+  year={2025}
+}
+```
+
+---
+
 ## License
 
-MIT License
+This project is released under the [MIT License](LICENSE).
+
+---
+
+## Acknowledgments
+
+This work was supported by the State Key Laboratory of Industrial Control Technology, Zhejiang University and Huzhou Institute of Zhejiang University.
+
+---
+
+## Contact
+
+For any questions or issues, feel free to reach out:
+
+- 📧 Email: xiagelearn@gmail.com
+- 💼 LinkedIn: [linkedin.com/in/zhenyu-hou-489640299](https://linkedin.com/in/zhenyu-hou-489640299)
+- 🔗 Related Repository: [github.com/MarineRock10/FSGP-BGK-ROS2](https://github.com/MarineRock10/FSGP-BGK-ROS2)

@@ -24,16 +24,16 @@ using namespace std::chrono_literals;
 class RobotSimulator : public rclcpp::Node {
 public:
     RobotSimulator() : Node("robot_simulator"), tf_broadcaster_(this) {
-        // 参数声明
+        // Declare parameters
         declare_parameters();
-        
-        // 初始化ROS接口
+
+        // Initialize ROS interfaces
         init_ros_interfaces();
-        
-        // 加载点云
+
+        // Load point cloud
         load_point_cloud();
-        
-        // 初始化位姿
+
+        // Initialize pose
         init_pose();
         
         // 主控制循环
@@ -44,9 +44,9 @@ public:
     }
 
 private:
-    // 参数声明
+    // Parameter declaration
     void declare_parameters() {
-        // 基础参数
+        // Basic parameters
         declare_parameter<std::string>("mesh_resource", "package://simulation_env/meshes/robot.dae");
         declare_parameter<double>("mesh_scale", 0.0005);
         declare_parameter<double>("mesh_offset_x", -0.15);
@@ -54,23 +54,23 @@ private:
         declare_parameter<double>("max_linear_vel", 1.0);
         declare_parameter<double>("max_angular_vel", M_PI);
         declare_parameter<double>("control_rate", 50.0);
-        
-        // 点云参数
+
+        // Point cloud parameters
         declare_parameter<std::string>("pcd_file_path", "");
         declare_parameter<double>("handle_range", 15.0);
         declare_parameter<double>("ground_range", 0.25);
         declare_parameter<double>("voxel_size", 0.05);
-        
-        // 初始化参数
+
+        // Initial pose parameters
         declare_parameter<double>("init_x", 0.0);
         declare_parameter<double>("init_y", 0.0);
         declare_parameter<double>("init_z", 0.0);
 
-        // 平面拟合参数
+        // Plane fitting parameters
         declare_parameter<double>("max_tilt_angle", 30.0);
         declare_parameter<double>("inlier_threshold", 0.1);
-        
-        // 获取参数值
+
+        // Get parameter values
         get_parameters();
     }
     
@@ -95,7 +95,7 @@ private:
         inlier_threshold_ = get_parameter("inlier_threshold").as_double();
     }
     
-    // ROS接口初始化
+    // Initialize ROS interfaces
     void init_ros_interfaces() {
         model_pub_ = create_publisher<visualization_msgs::msg::Marker>("/robot_model", 10);
         odom_pub_ = create_publisher<nav_msgs::msg::Odometry>("/odom", 10);
@@ -106,7 +106,7 @@ private:
             "/cmd_vel", 10, std::bind(&RobotSimulator::cmd_vel_callback, this, std::placeholders::_1));
     }
     
-    // 点云加载
+    // Load point cloud
     void load_point_cloud() {
         world_cloud_.reset(new pcl::PointCloud<pcl::PointXYZ>());
         local_cloud_.reset(new pcl::PointCloud<pcl::PointXYZ>());
@@ -116,7 +116,7 @@ private:
                 RCLCPP_ERROR(get_logger(), "Failed to load PCD file: %s", pcd_file_path_.c_str());
                 generate_test_cloud();
             } else {
-                // 对加载的点云进行降采样
+                // Downsample the loaded point cloud
                 pcl::PointCloud<pcl::PointXYZ>::Ptr downsampled_cloud(new pcl::PointCloud<pcl::PointXYZ>());
                 pcl::VoxelGrid<pcl::PointXYZ> voxel_grid;
                 voxel_grid.setInputCloud(world_cloud_);
@@ -137,10 +137,10 @@ private:
     }
     
     void generate_test_cloud() {
-        // 生成测试地形
+        // Generate test terrain
         for (float x = -50; x <= 50; x += 1.0) {
             for (float y = -50; y <= 50; y += 1.0) {
-                // 添加一些地形变化
+                // Add some terrain variation
                 float z = 0.2 * sin(x * 0.2) * cos(y * 0.2);
                 world_cloud_->push_back(pcl::PointXYZ(x, y, z));
             }
@@ -148,7 +148,7 @@ private:
         RCLCPP_WARN(get_logger(), "Generated test cloud with %zu points", world_cloud_->size());
     }
     
-    // 初始化位姿
+    // Initialize pose
     void init_pose() {
         current_pose_.position.x = init_x_;
         current_pose_.position.y = init_y_;
@@ -156,30 +156,30 @@ private:
         current_pose_.orientation = tf2::toMsg(tf2::Quaternion::getIdentity());
     }
     
-    // 控制循环
+    // Control loop
     void control_cycle() {
-        // 提取局部点云
+        // Extract local point cloud
         extract_local_cloud();
-        
-        // 更新位姿
+
+        // Update pose
         update_pose();
-        
-        // 发布所有数据
+
+        // Publish all data
         publish_tf_and_odometry();
         publish_local_cloud();
         publish_ground_plane();
         publish_robot_model();
     }
     
-    // 速度回调
+    // Velocity callback
     void cmd_vel_callback(const geometry_msgs::msg::Twist::SharedPtr msg) {
         linear_vel_ = std::clamp(msg->linear.x, -max_linear_vel_, max_linear_vel_);
         angular_vel_ = std::clamp(msg->angular.z, -max_angular_vel_, max_angular_vel_);
     }
     
-    // 发布TF和里程计
+    // Publish TF and odometry
     void publish_tf_and_odometry() {
-        // TF发布
+        // Publish TF
         geometry_msgs::msg::TransformStamped transform;
         transform.header.stamp = now();
         transform.header.frame_id = "map";
@@ -191,8 +191,8 @@ private:
         transform.transform.rotation = current_pose_.orientation;
         
         tf_broadcaster_.sendTransform(transform);
-        
-        // 里程计发布
+
+        // Publish odometry
         auto odom_msg = nav_msgs::msg::Odometry();
         odom_msg.header.stamp = now();
         odom_msg.header.frame_id = "map";
@@ -205,7 +205,7 @@ private:
         odom_pub_->publish(odom_msg);
     }
     
-    // 提取局部点云
+    // Extract local point cloud
     void extract_local_cloud() {
         pcl::PointXYZ search_point(
             current_pose_.position.x,
@@ -226,7 +226,7 @@ private:
         }
     }
     
-    // 发布局部点云
+    // Publish local point cloud
     void publish_local_cloud() {
         if (!local_cloud_ || local_cloud_->empty()) return;
         
@@ -237,20 +237,20 @@ private:
         local_cloud_pub_->publish(cloud_msg);
     }
     
-    // 更新位姿
+    // Update pose
     void update_pose() {
         const double dt = 1.0 / control_rate_;
-        
-        // 平面运动更新
+
+        // 2D motion update
         update_2d_motion(dt);
-        
-        // 从局部点云计算高度和姿态
+
+        // Compute height and orientation from local point cloud
         if (local_cloud_ && !local_cloud_->empty()) {
             update_height_and_orientation();
         }
     }
     
-    // 2D运动更新
+    // 2D motion update
     void update_2d_motion(double dt) {
         if (std::abs(angular_vel_) > 1e-5) {
             const double radius = linear_vel_ / angular_vel_;
@@ -268,9 +268,9 @@ private:
         current_yaw_ = fmod(current_yaw_ + angular_vel_ * dt, 2 * M_PI);
     }
     
-    // 从局部点云更新高度和姿态
+    // Update height and orientation from local point cloud
     void update_height_and_orientation() {
-        // 提取地面点云
+        // Extract ground points
         pcl::PointCloud<pcl::PointXYZ>::Ptr ground_cloud(new pcl::PointCloud<pcl::PointXYZ>());
         extract_ground_points(ground_cloud);
         
@@ -280,31 +280,31 @@ private:
             return;
         }
         
-        // 使用PCA拟合地面平面
+        // Use PCA to fit ground plane
         pcl::PCA<pcl::PointXYZ> pca;
         pca.setInputCloud(ground_cloud);
-        
+
         Eigen::Vector3f eigen_values = pca.getEigenValues().cast<float>();
         Eigen::Matrix3f eigen_vectors = pca.getEigenVectors().cast<float>();
-        
-        // 法向量是最小特征值对应的特征向量
+
+        // Normal vector is the eigenvector corresponding to the smallest eigenvalue
         Eigen::Vector3f normal = eigen_vectors.col(2);
         if (normal.z() < 0) normal = -normal;
-        
-        // 计算质心
+
+        // Compute centroid
         Eigen::Vector4f centroid;
         pcl::compute3DCentroid(*ground_cloud, centroid);
-        
-        // 更新位姿
+
+        // Update pose
         update_pose_from_ground(normal, centroid);
-        
-        // 发布地面点云用于可视化
+
+        // Publish ground cloud for visualization
         publish_ground_cloud(ground_cloud);
     }
     
-    // 提取地面点
+    // Extract ground points
     void extract_ground_points(pcl::PointCloud<pcl::PointXYZ>::Ptr& ground_cloud) {
-        // 基于高度统计的智能筛选
+        // Height-based statistical filtering
         std::vector<float> heights;
         for (const auto& point : local_cloud_->points) {
             double distance = sqrt(pow(point.x - current_pose_.position.x, 2) + 
@@ -316,13 +316,13 @@ private:
         
         if (heights.empty()) return;
         
-        // 计算高度统计
+        // Compute height statistics
         float mean_height = std::accumulate(heights.begin(), heights.end(), 0.0f) / heights.size();
         float height_std = 0.0f;
         for (float h : heights) height_std += pow(h - mean_height, 2);
         height_std = sqrt(height_std / heights.size());
-        
-        // 筛选地面点
+
+        // Filter ground points
         for (const auto& point : local_cloud_->points) {
             double distance = sqrt(pow(point.x - current_pose_.position.x, 2) + 
                                  pow(point.y - current_pose_.position.y, 2));
@@ -332,35 +332,35 @@ private:
         }
     }
     
-    // 从地面信息更新位姿
+    // Update pose from ground information
     void update_pose_from_ground(const Eigen::Vector3f& normal, const Eigen::Vector4f& centroid) {
-        // 计算高度
+        // Compute height
         double a = normal.x(), b = normal.y(), c = normal.z();
         double d = -normal.dot(Eigen::Vector3f(centroid[0], centroid[1], centroid[2]));
         current_pose_.position.z = (-a * current_pose_.position.x - b * current_pose_.position.y - d) / c;
-        
-        // 计算地面法向量对应的姿态（世界坐标系）
+
+        // Compute orientation from ground normal (world frame)
         double ground_roll = -atan2(normal.y(), normal.z());
         double ground_pitch = atan2(normal.x(), normal.z());
         tf2::Quaternion ground_orientation;
         ground_orientation.setRPY(ground_roll, ground_pitch, 0);
-        
-        // 创建只有偏航角的四元数
+
+        // Create yaw-only quaternion
         tf2::Quaternion yaw_only;
         yaw_only.setRPY(0, 0, current_yaw_);
-        
-        // 正确的组合：先地面姿态，再叠加偏航旋转
+
+        // Combine: ground orientation first, then yaw rotation
         tf2::Quaternion final_orientation = ground_orientation * yaw_only;
-        
+
         current_pose_.orientation = tf2::toMsg(final_orientation);
-        
-        // 保存地面信息
+
+        // Save ground information
         ground_normal_ = normal;
         ground_centroid_ = centroid;
     }
 
     
-    // 发布地面点云
+    // Publish ground point cloud
     void publish_ground_cloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud) {
         sensor_msgs::msg::PointCloud2 cloud_msg;
         pcl::toROSMsg(*cloud, cloud_msg);
@@ -369,7 +369,7 @@ private:
         ground_cloud_pub_->publish(cloud_msg);
     }
     
-    // 发布地面平面可视化
+    // Publish ground plane visualization
     void publish_ground_plane() {
         visualization_msgs::msg::Marker marker;
         marker.header.frame_id = "map";
@@ -383,7 +383,7 @@ private:
         marker.pose.position.y = current_pose_.position.y;
         marker.pose.position.z = current_pose_.position.z;
         
-        // 根据法向量设置方向
+        // Set orientation based on normal vector
         double roll = -atan2(ground_normal_.y(), ground_normal_.z());
         double pitch = atan2(ground_normal_.x(), ground_normal_.z());
         tf2::Quaternion q;
@@ -402,7 +402,7 @@ private:
         plane_marker_pub_->publish(marker);
     }
     
-    // 发布机器人模型
+    // Publish robot model
     void publish_robot_model() {
         auto marker = visualization_msgs::msg::Marker();
         marker.header.frame_id = "map";
@@ -420,14 +420,14 @@ private:
         double roll, pitch, yaw;
         tf2::Matrix3x3(tf_quat).getRPY(roll, pitch, yaw);
 
-        // 应用mesh偏移
+        // Apply mesh offset
         double dx = mesh_offset_x_;
         double dy = mesh_offset_y_;
         marker.pose.position.x = current_pose_.position.x + dx * cos(yaw) - dy * sin(yaw);
         marker.pose.position.y = current_pose_.position.y + dx * sin(yaw) + dy * cos(yaw);
         marker.pose.position.z = current_pose_.position.z;
 
-        // 保持原有的旋转处理
+        // Apply rotation
         tf2::Quaternion q;
         q.setRPY(M_PI / 2, 0, M_PI / 2);
         marker.pose.orientation = tf2::toMsg(tf_quat * q);
@@ -436,7 +436,7 @@ private:
         model_pub_->publish(marker);
     }
 
-    // 参数
+    // Parameters
     std::string mesh_resource_;
     double mesh_scale_;
     double mesh_offset_x_;
@@ -452,22 +452,22 @@ private:
     double max_tilt_angle_;
     double inlier_threshold_;
     
-    // 点云相关
+    // Point cloud related
     pcl::PointCloud<pcl::PointXYZ>::Ptr world_cloud_;
     pcl::PointCloud<pcl::PointXYZ>::Ptr local_cloud_;
     pcl::KdTreeFLANN<pcl::PointXYZ> kd_tree_;
-    
-    // 机器人状态
+
+    // Robot state
     geometry_msgs::msg::Pose current_pose_;
     double current_yaw_ = 0.0;
     double linear_vel_ = 0.0;
     double angular_vel_ = 0.0;
-    
-    // 地面信息
+
+    // Ground information
     Eigen::Vector3f ground_normal_ = Eigen::Vector3f::UnitZ();
     Eigen::Vector4f ground_centroid_ = Eigen::Vector4f::Zero();
-    
-    // ROS接口
+
+    // ROS interfaces
     rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr model_pub_;
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub_;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr local_cloud_pub_;

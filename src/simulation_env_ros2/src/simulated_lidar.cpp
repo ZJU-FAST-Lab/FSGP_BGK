@@ -48,22 +48,22 @@ public:
         bin_matrix_ = std::vector<std::vector<double>>(horizontal_bins,
                      std::vector<double>(num_laser_lines_, std::numeric_limits<double>::max()));
 
-        // 初始化随机数生成器
+        // Initialize random number generator
         random_engine_ = std::mt19937(std::random_device{}());
         noise_distribution_ = std::normal_distribution<double>(0.0, noise_stddev_);
 
-        // 使用与RViz2兼容的QoS设置
+        // Use QoS settings compatible with RViz2
         auto pointcloud_qos = rclcpp::QoS(rclcpp::KeepLast(5));
         pointcloud_qos.best_effort();
         pointcloud_qos.durability_volatile();
 
-        // 初始化发布器
+        // Initialize publishers
         lidar_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
             "/simulated_lidar", 1);
         local_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
             "/simulated_lidar_local", 1);
 
-        // 订阅全局点云（只订阅一次）
+        // Subscribe to global point cloud (only once)
         auto global_cloud_qos = rclcpp::QoS(rclcpp::KeepLast(1));
         global_cloud_qos.transient_local();
         global_cloud_qos.reliable();
@@ -72,13 +72,13 @@ public:
             "/local_cloud", 1,
             std::bind(&SimulatedLidar::globalCloudCallback, this, std::placeholders::_1));
 
-        // 使用可配置的发布频率
+        // Use configurable publish rate
         int timer_interval_ms = static_cast<int>(1000.0 / publish_rate);
         timer_ = this->create_wall_timer(
             std::chrono::milliseconds(timer_interval_ms),
             std::bind(&SimulatedLidar::timerCallback, this));
 
-        // 状态变量
+        // State variables
         global_cloud_loaded_ = false;
         last_transform_valid_ = false;
 
@@ -92,7 +92,7 @@ public:
     }
 
 private:
-    // 参数
+    // Parameters
     double MAX_RANGE;
     double MIN_RANGE;
     double horizontal_resolution_;
@@ -125,10 +125,10 @@ private:
 
     bool getCurrentTransform(Eigen::Affine3d& transform) {
         try {
-            // 使用最新的TF变换，避免时间同步问题
+            // Use latest TF transform to avoid time synchronization issues
             geometry_msgs::msg::TransformStamped transform_stamped;
-            
-            // 尝试获取最新的变换
+
+            // Try to get the latest transform
             transform_stamped = tf_buffer_.lookupTransform(
                 world_frame_, robot_frame_, tf2::TimePointZero,
                 tf2::durationFromSec(tf_lookup_timeout_));
@@ -144,7 +144,7 @@ private:
     }
 
     void globalCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
-        // 只处理第一次接收到的点云
+        // Only process the first received point cloud
         if (global_cloud_loaded_) {
             return;
         }
@@ -339,7 +339,7 @@ private:
             return;
         }
 
-        // 获取当前TF变换
+        // Get current TF transform
         Eigen::Affine3d current_transform;
         if (!getCurrentTransform(current_transform)) {
             RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000,
@@ -350,11 +350,11 @@ private:
         try {
             auto start_time = std::chrono::high_resolution_clock::now();
             
-            // 1. 重置bin矩阵
+            // 1. Reset bin matrix
             resetBinMatrix();
-            
-            // 2. 转换点云到机器人坐标系
-            pcl::PointCloud<pcl::PointXYZ>::Ptr robot_frame_cloud = 
+
+            // 2. Transform point cloud to robot frame
+            pcl::PointCloud<pcl::PointXYZ>::Ptr robot_frame_cloud =
                 transformCloud(global_cloud_, current_transform.inverse());
 
             if (robot_frame_cloud->empty()) {
@@ -363,18 +363,18 @@ private:
                 return;
             }
 
-            // 3. 填充bin矩阵
+            // 3. Fill bin matrix
             fillBinMatrix(robot_frame_cloud);
 
-            // 4. 生成模拟点云（传入变换用于边界检查）
+            // 4. Generate simulated point cloud (pass transform for boundary check)
             pcl::PointCloud<pcl::PointXYZ>::Ptr simulated_cloud = generateSimulatedCloud(current_transform);
 
-            // 5. 发布点云
+            // 5. Publish point cloud
             if (!simulated_cloud->empty()) {
-                // 发布局部点云（base_link坐标系）- 直接使用生成的模拟点云
+                // Publish local point cloud (base_link frame) - use generated simulated cloud directly
                 publishPointCloud(simulated_cloud, robot_frame_, local_cloud_pub_, "local frame lidar");
-                
-                // 发布世界坐标系点云 - 转换回世界坐标系
+
+                // Publish world frame point cloud - transform back to world frame
                 pcl::PointCloud<pcl::PointXYZ>::Ptr world_cloud = 
                     transformCloud(simulated_cloud, current_transform);
                 publishPointCloud(world_cloud, world_frame_, lidar_pub_, "world frame lidar");
@@ -387,7 +387,7 @@ private:
                                 "Processing time: %ld ms, Points: %zu", 
                                 duration.count(), simulated_cloud->size());
             
-            // 更新最后有效的变换
+            // Update last valid transform
             last_transform_ = current_transform;
             last_transform_valid_ = true;
             

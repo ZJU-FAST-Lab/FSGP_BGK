@@ -23,7 +23,7 @@ public:
     SimulatedLidar(ros::NodeHandle& nh, ros::NodeHandle& pnh) 
         : nh_(nh), pnh_(pnh), tf_buffer_(), tf_listener_(tf_buffer_) {
         
-        // 参数配置
+        // Parameter configuration
         pnh_.param<double>("horizontal_resolution", horizontal_resolution_, 0.05);
         pnh_.param<int>("num_laser_lines", num_laser_lines_, 64);
         pnh_.param<double>("max_range", MAX_RANGE, 5.0);
@@ -43,23 +43,23 @@ public:
         pnh_.param<double>("map_max_z", map_max_z_, 50.0);
         pnh_.param<bool>("enable_boundary_check", enable_boundary_check_, true);
         
-        // 初始化bin矩阵
+        // Initialize bin matrix
         int horizontal_bins = static_cast<int>(2 * M_PI / horizontal_resolution_);
-        bin_matrix_ = std::vector<std::vector<double>>(horizontal_bins, 
+        bin_matrix_ = std::vector<std::vector<double>>(horizontal_bins,
                      std::vector<double>(num_laser_lines_, std::numeric_limits<double>::max()));
 
-        // 初始化随机数生成器
+        // Initialize random number generator
         random_engine_ = std::mt19937(std::random_device{}());
         noise_distribution_ = std::normal_distribution<double>(0.0, noise_stddev_);
 
-        // 初始化发布器
+        // Initialize publishers
         lidar_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/simulated_lidar", 1);
         local_cloud_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/simulated_lidar_local", 1);
-        
-        // 订阅全局点云
+
+        // Subscribe to global point cloud
         global_cloud_sub_ = nh_.subscribe("/local_cloud", 1, &SimulatedLidar::globalCloudCallback, this);
-        
-        // 定时器
+
+        // Timer
         timer_ = nh_.createTimer(ros::Duration(1.0 / publish_rate_), &SimulatedLidar::timerCallback, this);
 
         global_cloud_loaded_ = false;
@@ -75,7 +75,7 @@ public:
     }
 
 private:
-    // 参数
+    // Parameters
     double MAX_RANGE, MIN_RANGE;
     double horizontal_resolution_;
     int num_laser_lines_;
@@ -292,7 +292,7 @@ private:
         try {
             resetBinMatrix();
 
-            // 转换点云到机器人坐标系
+            // Transform point cloud to robot frame
             pcl::PointCloud<pcl::PointXYZ>::Ptr robot_frame_cloud =
                 transformCloud(global_cloud_, current_transform.inverse());
 
@@ -303,7 +303,7 @@ private:
 
             fillBinMatrix(robot_frame_cloud);
 
-            // 生成模拟点云（传入变换用于边界检查）
+            // Generate simulated point cloud (pass transform for boundary check)
             pcl::PointCloud<pcl::PointXYZ>::Ptr simulated_cloud = generateSimulatedCloud(current_transform);
 
             if (!simulated_cloud->empty()) {
@@ -314,7 +314,7 @@ private:
                 local_msg.header.frame_id = robot_frame_;
                 local_cloud_pub_.publish(local_msg);
 
-                // 发布世界坐标系点云
+                // Publish world frame point cloud
                 pcl::PointCloud<pcl::PointXYZ>::Ptr world_cloud =
                     transformCloud(simulated_cloud, current_transform);
                 sensor_msgs::PointCloud2 world_msg;

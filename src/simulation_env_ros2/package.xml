@@ -10,7 +10,7 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
 
-  <!-- ROS核心依赖 -->
+  <!-- ROS core dependencies -->
   <depend>rclcpp</depend>
   <depend>visualization_msgs</depend>
   <depend>geometry_msgs</depend>
@@ -19,7 +19,7 @@
   <depend>tf2_geometry_msgs</depend>
   <depend>nav_msgs</depend>
   
-  <!-- 第三方库依赖 -->
+  <!-- Third-party library dependencies -->
   <build_depend>pcl</build_depend>
   <build_depend>eigen3</build_depend>
   <build_depend>libpcl-dev</build_depend>
