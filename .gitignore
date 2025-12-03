@@ -41,6 +41,7 @@ Thumbs.db
 *.log
 *.tmp
 
-# CATKIN_IGNORE files (keep them but note they exist)
-# src/*/CATKIN_IGNORE
+# Build system ignore markers (user creates locally)
+CATKIN_IGNORE
+COLCON_IGNORE
 

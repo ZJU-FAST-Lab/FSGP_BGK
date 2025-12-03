@@ -18,7 +18,7 @@ simulation_node:
     control_rate: 50.0
 
     # Point cloud
-    pcd_file_path: "/home/percy/FSGP-BGK-ROS2/src/simulation_env_ros2/PCD/forest.pcd"
+    pcd_file_path: "/framework/FSGP-BGK-ROS2/src/simulation_env_ros2/PCD/forest.pcd"
     search_radius: 0.2
     min_neighbors: 5
     height_offset: 0.0
