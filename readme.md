@@ -145,5 +145,5 @@ This work was supported by the State Key Laboratory of Industrial Control Techno
 For any questions or issues, feel free to reach out:
 
 - 📧 Email: xiagelearn@gmail.com
-- 💼 LinkedIn: [linkedin.com/in/zhenyu-hou-489640299](https://linkedin.com/in/zhenyu-hou-489640299)(Looking for PhD position,personal information see in linkedin or website)  
+- 💼 LinkedIn: [linkedin.com/in/zhenyu-hou-489640299](https://linkedin.com/in/zhenyu-hou-489640299)(Looking for PhD position,personal information see in linkedin or percyhzy's github website)    
 - 🔗 Related Repository: [github.com/MarineRock10/FSGP-BGK-ROS2](https://github.com/MarineRock10/FSGP-BGK-ROS2)
