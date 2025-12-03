@@ -15,7 +15,7 @@ simulation_node:
     control_rate: 50.0    # 控制频率 (Hz)
 
     # 点云参数
-    pcd_file_path: "/home/tsm/tsim/src/simulation_env/PCD/forest.pcd"
+    pcd_file_path: "/framework/FSGP-BGK-ROS2/src/simulation_env/PCD/forest.pcd"
     search_radius: 0.2    # 邻近点搜索半径
     min_neighbors: 5     # 最小邻近点数
 

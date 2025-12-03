@@ -1,0 +1,144 @@
+Panels:
+  - Class: rviz/Displays
+    Name: Displays
+  - Class: rviz/Selection
+    Name: Selection
+  - Class: rviz/Tool Properties
+    Name: Tool Properties
+  - Class: rviz/Views
+    Name: Views
+  - Class: rviz/Time
+    Name: Time
+
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz/Axes
+      Enabled: true
+      Length: 1
+      Name: MapAxes
+      Radius: 0.1
+      Reference Frame: map
+      Value: true
+
+    - Class: rviz/Axes
+      Enabled: true
+      Length: 1
+      Name: RobotAxes
+      Radius: 0.1
+      Reference Frame: base_link
+      Value: true
+
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Class: rviz/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: AxisColor
+      Enabled: true
+      Name: LocalCloud
+      Position Transformer: XYZ
+      Size (m): 0.02
+      Style: Flat Squares
+      Topic: /local_cloud
+      Value: true
+
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Class: rviz/PointCloud2
+      Color: 0; 255; 0
+      Color Transformer: FlatColor
+      Enabled: true
+      Name: GroundCloud
+      Position Transformer: XYZ
+      Size (m): 0.05
+      Style: Flat Squares
+      Topic: /ground_cloud
+      Value: true
+
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Class: rviz/PointCloud2
+      Color: 255; 0; 0
+      Color Transformer: AxisColor
+      Enabled: true
+      Name: SimulatedLidar
+      Position Transformer: XYZ
+      Size (m): 0.05
+      Style: Flat Squares
+      Topic: /simulated_lidar
+      Value: true
+
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Class: rviz/PointCloud2
+      Color Transformer: Intensity
+      Enabled: true
+      Max Intensity: 1
+      Min Intensity: 0
+      Name: TraversabilityPCL
+      Position Transformer: XYZ
+      Size (m): 0.1
+      Style: Flat Squares
+      Topic: /traversability_pcl_ldd
+      Value: true
+
+    - Class: rviz/Marker
+      Enabled: true
+      Name: RobotModel
+      Topic: /robot_model
+      Value: true
+
+    - Class: rviz/Marker
+      Enabled: true
+      Name: GroundPlane
+      Topic: /ground_plane
+      Value: true
+
+    - Class: rviz/Odometry
+      Enabled: true
+      Keep: 1
+      Name: Odometry
+      Topic: /odom
+      Value: true
+
+  Enabled: true
+  Global Options:
+    Background Color: 255; 255; 255
+    Fixed Frame: map
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz/Interact
+    - Class: rviz/MoveCamera
+    - Class: rviz/Select
+    - Class: rviz/FocusCamera
+    - Class: rviz/SetInitialPose
+      Topic: /initialpose
+    - Class: rviz/SetGoal
+      Topic: /goal_pose
+    - Class: rviz/PublishPoint
+      Topic: /clicked_point
+  Value: true
+  Views:
+    Current:
+      Class: rviz/Orbit
+      Distance: 15
+      Focal Point:
+        X: 0
+        Y: 0
+        Z: 0
+      Name: Current View
+      Near Clip Distance: 0.01
+      Pitch: 1.2
+      Target Frame: base_link
+      Value: Orbit (rviz)
+      Yaw: 0.5
+    Saved: ~
+Window Geometry:
+  Displays:
+    collapsed: false
+  Height: 1016
+  Width: 1850
+  X: 70
+  Y: 27
+

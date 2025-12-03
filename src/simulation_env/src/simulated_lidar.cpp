@@ -17,10 +17,10 @@
 
 class SimulatedLidar : public rclcpp::Node {
 public:
-    SimulatedLidar() : Node("simulated_lidar"), 
+    SimulatedLidar() : Node("simulated_lidar"),
                       tf_buffer_(this->get_clock()),
                       tf_listener_(tf_buffer_) {
-        
+
         // 参数配置
         this->declare_parameter<double>("horizontal_resolution", 0.05);
         this->declare_parameter<int>("num_laser_lines", 64);
@@ -31,7 +31,10 @@ public:
         this->declare_parameter<std::string>("world_frame", "map");
         this->declare_parameter<double>("publish_rate", 10.0);
         this->declare_parameter<double>("tf_lookup_timeout", 0.1);
-        
+
+        // 【修复穿模问题】添加边界检查参数
+        this->declare_parameter<bool>("enable_boundary_check", true);
+
         horizontal_resolution_ = this->get_parameter("horizontal_resolution").as_double();
         num_laser_lines_ = this->get_parameter("num_laser_lines").as_int();
         MAX_RANGE = this->get_parameter("max_range").as_double();
@@ -41,10 +44,11 @@ public:
         world_frame_ = this->get_parameter("world_frame").as_string();
         double publish_rate = this->get_parameter("publish_rate").as_double();
         tf_lookup_timeout_ = this->get_parameter("tf_lookup_timeout").as_double();
-        
+        enable_boundary_check_ = this->get_parameter("enable_boundary_check").as_bool();
+
         // 初始化bin矩阵
         int horizontal_bins = static_cast<int>(2 * M_PI / horizontal_resolution_);
-        bin_matrix_ = std::vector<std::vector<double>>(horizontal_bins, 
+        bin_matrix_ = std::vector<std::vector<double>>(horizontal_bins,
                      std::vector<double>(num_laser_lines_, std::numeric_limits<double>::max()));
 
         // 初始化随机数生成器
@@ -61,16 +65,16 @@ public:
             "/simulated_lidar", 1);
         local_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
             "/simulated_lidar_local", 1);
-        
+
         // 订阅全局点云（只订阅一次）
         auto global_cloud_qos = rclcpp::QoS(rclcpp::KeepLast(1));
         global_cloud_qos.transient_local();
         global_cloud_qos.reliable();
-        
+
         global_cloud_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
             "/local_cloud", 1,
             std::bind(&SimulatedLidar::globalCloudCallback, this, std::placeholders::_1));
-        
+
         // 使用可配置的发布频率
         int timer_interval_ms = static_cast<int>(1000.0 / publish_rate);
         timer_ = this->create_wall_timer(
@@ -81,11 +85,13 @@ public:
         global_cloud_loaded_ = false;
         last_transform_valid_ = false;
 
-        RCLCPP_INFO(this->get_logger(), 
-                   "SimulatedLidar initialized: %d horizontal bins, %d laser lines, %.1f Hz publish rate", 
+        RCLCPP_INFO(this->get_logger(),
+                   "SimulatedLidar initialized: %d horizontal bins, %d laser lines, %.1f Hz publish rate",
                    horizontal_bins, num_laser_lines_, publish_rate);
-        RCLCPP_INFO(this->get_logger(), "Using TF transform from %s to %s", 
+        RCLCPP_INFO(this->get_logger(), "Using TF transform from %s to %s",
                    world_frame_.c_str(), robot_frame_.c_str());
+        RCLCPP_INFO(this->get_logger(), "Boundary check: %s",
+                   enable_boundary_check_ ? "enabled" : "disabled");
     }
 
 private:
@@ -98,6 +104,12 @@ private:
     std::string robot_frame_;
     std::string world_frame_;
     double tf_lookup_timeout_;
+
+    // 【修复穿模问题】边界检查参数
+    bool enable_boundary_check_;
+    double map_min_x_, map_max_x_;
+    double map_min_y_, map_max_y_;
+    double map_min_z_, map_max_z_;
     
     // ROS接口
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr lidar_pub_;
@@ -146,29 +158,71 @@ private:
         if (global_cloud_loaded_) {
             return;
         }
-        
+
         try {
             pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
             pcl::fromROSMsg(*msg, *cloud);
-            
+
             if (cloud->empty()) {
                 RCLCPP_WARN(this->get_logger(), "Received empty point cloud");
                 return;
             }
-            
+
+            // 【修复穿模问题】计算地图边界
+            if (enable_boundary_check_) {
+                updateMapBoundary(cloud);
+            }
+
             global_cloud_ = cloud;
             global_cloud_loaded_ = true;
-            
-            RCLCPP_INFO(this->get_logger(), 
-                       "Global cloud loaded with %zu points, will not update again", 
+
+            RCLCPP_INFO(this->get_logger(),
+                       "Global cloud loaded with %zu points, will not update again",
                        cloud->size());
-            
+
             // 成功加载后，取消订阅以节省资源
             global_cloud_sub_.reset();
-            
+
         } catch (const std::exception& e) {
             RCLCPP_ERROR(this->get_logger(), "Error processing global cloud: %s", e.what());
         }
+    }
+
+    // 【修复穿模问题】根据实际点云计算地图边界
+    void updateMapBoundary(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud) {
+        if (cloud->empty()) return;
+
+        map_min_x_ = map_min_y_ = map_min_z_ = std::numeric_limits<double>::max();
+        map_max_x_ = map_max_y_ = map_max_z_ = std::numeric_limits<double>::lowest();
+
+        for (const auto& point : cloud->points) {
+            if (!std::isfinite(point.x) || !std::isfinite(point.y) || !std::isfinite(point.z)) continue;
+
+            map_min_x_ = std::min(map_min_x_, (double)point.x);
+            map_max_x_ = std::max(map_max_x_, (double)point.x);
+            map_min_y_ = std::min(map_min_y_, (double)point.y);
+            map_max_y_ = std::max(map_max_y_, (double)point.y);
+            map_min_z_ = std::min(map_min_z_, (double)point.z);
+            map_max_z_ = std::max(map_max_z_, (double)point.z);
+        }
+
+        // 添加一点余量
+        double margin = 0.5;
+        map_min_x_ -= margin; map_max_x_ += margin;
+        map_min_y_ -= margin; map_max_y_ += margin;
+        map_min_z_ -= margin; map_max_z_ += margin;
+
+        RCLCPP_INFO(this->get_logger(),
+                   "Map boundary updated: X[%.2f, %.2f] Y[%.2f, %.2f] Z[%.2f, %.2f]",
+                   map_min_x_, map_max_x_, map_min_y_, map_max_y_, map_min_z_, map_max_z_);
+    }
+
+    // 【修复穿模问题】检查点是否在地图边界内
+    bool isPointInMapBoundary(double x, double y, double z) {
+        if (!enable_boundary_check_) return true;
+        return (x >= map_min_x_ && x <= map_max_x_ &&
+                y >= map_min_y_ && y <= map_max_y_ &&
+                z >= map_min_z_ && z <= map_max_z_);
     }
 
     bool isValidPoint(const pcl::PointXYZ& point) {
@@ -214,7 +268,8 @@ private:
         }
     }
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr generateSimulatedCloud() {
+    // 【修复穿模问题】添加变换参数用于边界检查
+    pcl::PointCloud<pcl::PointXYZ>::Ptr generateSimulatedCloud(const Eigen::Affine3d& robot_to_world) {
         pcl::PointCloud<pcl::PointXYZ>::Ptr simulated_cloud(new pcl::PointCloud<pcl::PointXYZ>);
         const size_t expected_size = bin_matrix_.size() * bin_matrix_[0].size() / 4;
         simulated_cloud->reserve(expected_size);
@@ -230,18 +285,25 @@ private:
                     point.x = range * std::cos(v_angle) * std::cos(h_angle);
                     point.y = range * std::cos(v_angle) * std::sin(h_angle);
                     point.z = range * std::sin(v_angle);
-                    
+
                     if (isValidPoint(point)) {
+                        // 【修复穿模问题】将点转换到世界坐标系检查边界
+                        if (enable_boundary_check_) {
+                            Eigen::Vector3d world_pt = robot_to_world * Eigen::Vector3d(point.x, point.y, point.z);
+                            if (!isPointInMapBoundary(world_pt.x(), world_pt.y(), world_pt.z())) {
+                                continue; // 跳过超出地图边界的点
+                            }
+                        }
                         simulated_cloud->push_back(point);
                     }
                 }
             }
         }
-        
+
         simulated_cloud->width = simulated_cloud->size();
         simulated_cloud->height = 1;
         simulated_cloud->is_dense = true;
-        
+
         return simulated_cloud;
     }
 
@@ -321,8 +383,8 @@ private:
             // 3. 填充bin矩阵
             fillBinMatrix(robot_frame_cloud);
 
-            // 4. 生成模拟点云
-            pcl::PointCloud<pcl::PointXYZ>::Ptr simulated_cloud = generateSimulatedCloud();
+            // 4. 生成模拟点云（传入变换用于边界检查）
+            pcl::PointCloud<pcl::PointXYZ>::Ptr simulated_cloud = generateSimulatedCloud(current_transform);
 
             // 5. 发布点云
             if (!simulated_cloud->empty()) {

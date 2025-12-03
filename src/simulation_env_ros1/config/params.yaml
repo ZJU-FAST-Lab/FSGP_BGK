@@ -1,0 +1,29 @@
+# ROS1 Noetic版本仿真环境参数配置
+simulation_node:
+  # 初始位置
+  init_x: 0.0
+  init_y: 0.0
+  init_z: 0.0
+  
+  # 模型参数
+  mesh_resource: "package://simulation_env_ros1/meshes/robot.dae"
+  mesh_scale: 0.0005
+  mesh_offset_x: -0.15  # 模型中心偏移
+  mesh_offset_y: -0.16
+
+  # 控制参数
+  max_linear_vel: 1.0   # 最大线速度
+  max_angular_vel: 3.14159  # 最大角速度 (π)
+  control_rate: 50.0    # 控制频率 (Hz)
+
+  # 点云参数
+  # 注意：请修改为你的实际PCD文件路径
+  pcd_file_path: ""  # 留空则使用测试点云
+  handle_range: 15.0   # 局部点云提取范围
+  ground_range: 0.25   # 地面点搜索半径
+  voxel_size: 0.05     # 体素降采样大小
+
+  # 平面拟合参数
+  max_tilt_angle: 30.0    # 最大倾斜角度（度）
+  inlier_threshold: 0.1   # 平面拟合阈值
+
